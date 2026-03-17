@@ -4,7 +4,7 @@ pipeline {
     environment {
         DOCKER_IMAGE = '2023BEC0014'
         DOCKER_CREDS_ID = 'ritishaa_anand'
-        DOCKER_HUB_USER = 'anandritishaa07'
+        DOCKER_HUB_USER = 'ritishaa07iiitk'
         TAG = "${env.BUILD_NUMBER}"
     }
 
