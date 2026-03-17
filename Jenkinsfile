@@ -1,24 +1,19 @@
 pipeline {
     agent any
     
-    // Environment variables
     environment {
-        // Change these to match your Docker Hub repository details
         DOCKER_IMAGE = '2023BEC0014'
-        DOCKER_CREDS_ID = 'ritishaa_anand' // ID of credentials in Jenkins
-        DOCKER_HUB_USER = 'anandritishaa07' // Replace with your Docker Hub username
+        DOCKER_CREDS_ID = 'ritishaa_anand'
+        DOCKER_HUB_USER = 'anandritishaa07'
         TAG = "${env.BUILD_NUMBER}"
     }
 
     stages {
         stage('Checkout') {
             steps {
-                // Checkout the SCM automatically
                 checkout scm
             }
         }
-        
-       
 
         stage('Build Docker Image') {
             steps {
@@ -32,42 +27,30 @@ pipeline {
         stage('Test Docker Image') {
             steps {
                 script {
-                    echo "Testing if the container runs..."
-                    // Start the container, wait a moment, and ensure it is up
-                    sh """
-                        docker run -d --name temp-test-${TAG} -p 8085:80 ${DOCKER_HUB_USER}/${DOCKER_IMAGE}:${TAG}
-                       
-                    """
+                    sh "docker run -d --rm --name temp-test-${TAG} -p 8090:80 ${DOCKER_HUB_USER}/${DOCKER_IMAGE}:${TAG}"
                 }
             }
         }
-    stage('Push Docker Image') {
-    steps {
-        script {
-            echo "Pushing Docker Image to Docker Hub..."
 
-            withCredentials([usernamePassword(credentialsId: env.DOCKER_CREDS_ID, usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
-                sh """
-                echo \$DOCKERHUB_PASS | docker login -u ${DOCKER_HUB_USER} --password-stdin
-                docker push ${DOCKER_HUB_USER}/${DOCKER_IMAGE}:${TAG}
-                docker push ${DOCKER_HUB_USER}/${DOCKER_IMAGE}:latest
-                docker logout
-                """
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: env.DOCKER_CREDS_ID, usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
+                        sh """
+                        echo \$DOCKERHUB_PASS | docker login -u ${DOCKER_HUB_USER} --password-stdin
+                        docker push ${DOCKER_HUB_USER}/${DOCKER_IMAGE}:${TAG}
+                        docker push ${DOCKER_HUB_USER}/${DOCKER_IMAGE}:latest
+                        docker logout
+                        """
+                    }
+                }
             }
         }
-    }
-}
-        
     }
 
     post {
         always {
-            echo "Pipeline finished."
-            // Clean up workspace
             cleanWs()
-            // Clean up local images
-            sh "docker rmi ${DOCKER_HUB_USER}/${DOCKER_IMAGE}:${TAG} || true"
-            sh "docker rmi ${DOCKER_HUB_USER}/${DOCKER_IMAGE}:latest || true"
         }
         success {
             echo "Build and Push was successful!"
@@ -77,5 +60,3 @@ pipeline {
         }
     }
 }
-
-
